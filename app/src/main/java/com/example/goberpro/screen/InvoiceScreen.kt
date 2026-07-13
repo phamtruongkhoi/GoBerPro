@@ -78,7 +78,7 @@ fun InvoiceScreen(
                                     .background(Color(0xFF009688).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
-                                Text("ĐÃ THANH TOÁN (PAID)", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF009688))
+                                Text("CHƯA THANH TOÁN", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF009688))
                             }
                         }
                         HorizontalDivider(color = Color.DarkGray)

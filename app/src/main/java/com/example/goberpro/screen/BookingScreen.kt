@@ -41,10 +41,8 @@ fun BookingScreen(
     val selectedServices by viewModel.selectedServices.collectAsState()
     val totalPrice by viewModel.totalPrice.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-
     var customerName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    
     val calendar = Calendar.getInstance()
     var selectedDate by remember { mutableStateOf(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)) }
     
@@ -55,7 +53,6 @@ fun BookingScreen(
         "18:00", "18:30", "19:00", "19:30", "20:00"
     )
     var selectedTime by remember { mutableStateOf("") }
-
     var showDatePicker by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
@@ -126,6 +123,7 @@ fun BookingScreen(
                     unfocusedBorderColor = Color.Gray
                 )
             )
+
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = phoneNumber,

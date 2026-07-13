@@ -40,6 +40,9 @@ class BarberViewModel : ViewModel() {
     private val _bookingSuccess = MutableStateFlow(false)
     val bookingSuccess: StateFlow<Boolean> = _bookingSuccess.asStateFlow()
 
+    private val _bookingHistory = MutableStateFlow<List<Booking>>(emptyList())
+    val bookingHistory: StateFlow<List<Booking>> = _bookingHistory.asStateFlow()
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
@@ -52,6 +55,24 @@ class BarberViewModel : ViewModel() {
             try {
                 val data = supabase.postgrest["services"].select().decodeList<BarberService>()
                 _availableServices.value = data
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun fetchBookingHistory() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // Lấy lịch sử booking, sắp xếp theo thời gian mới nhất
+                val data = supabase.postgrest["bookings"]
+                    .select()
+                    .decodeList<Booking>()
+                    .sortedByDescending { it.id } // Hoặc dùng created_at nếu có trong model
+                _bookingHistory.value = data
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {

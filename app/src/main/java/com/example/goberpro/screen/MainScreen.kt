@@ -124,7 +124,7 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
                         )
                     }
                 }
-                2 -> PlaceholderScreen("Màn Hình Lịch Sử")
+                2 -> HistoryScreen(viewModel = viewModel)
                 3 -> PlaceholderScreen("Màn Hình Thông Báo")
                 4 -> PlaceholderScreen("Màn Hình Cá Nhân")
             }
