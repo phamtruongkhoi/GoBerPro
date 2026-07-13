@@ -37,6 +37,8 @@ android {
 }
 
 dependencies {
+    // Thư viện Coil để load ảnh từ mạng
+    implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.ktor:ktor-client-android:2.3.8")
     // Supabase BOM & Ktor Client

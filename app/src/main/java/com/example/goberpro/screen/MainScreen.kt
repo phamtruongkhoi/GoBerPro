@@ -11,17 +11,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import kotlinx.serialization.SerialName
 
-// Các import mới được thêm vào để hỗ trợ Supabase và trạng thái Loading
+
+// Các import hỗ trợ Supabase và trạng thái Loading
 import androidx.compose.material3.CircularProgressIndicator
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import com.example.goberpro.supabase // Lưu ý: Đổi tên package nếu file SupabaseClient của bạn nằm ở thư mục khác
+import com.example.goberpro.supabase // Lưu ý: Đổi tên package nếu file SupabaseClient của cậu nằm ở thư mục khác
 
 // -- BẢNG MÀU --
 val BackgroundColor = Color(0xFF121212)
@@ -89,10 +94,11 @@ fun PlaceholderScreen(title: String) {
 // 1. Khai báo khuôn mẫu dữ liệu khớp với bảng trên Supabase
 @Serializable
 data class BarberService(
-    val id: Int,
+    val id: Long,
     val name: String,
     val price: Long,
-    val description: String? = null
+    val description: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null // Cột chứa link ảnh từ Supabase
 )
 
 // Toàn bộ giao diện trang chủ đã được cấu hình tự động gọi API của Supabase
@@ -218,14 +224,19 @@ fun HomeContent() {
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Cột ảnh tạm thời
-                        Box(
+                        // HIỂN THỊ ẢNH THẬT BẰNG ASYNCIMAGE
+                        AsyncImage(
+                            model = service.imageUrl, // Link ảnh lấy từ Supabase
+                            contentDescription = service.name,
                             modifier = Modifier
                                 .size(80.dp)
-                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp)), // Bo góc ảnh cho đẹp
+                            contentScale = ContentScale.Crop // Cắt ảnh vừa vặn với khung vuông
                         )
+
                         Spacer(modifier = Modifier.width(16.dp))
-                        // Cột thông tin lấy từ database
+
+                        // Cột thông tin chữ giữ nguyên
                         Column {
                             Text(text = service.name, color = TextPrimary, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
