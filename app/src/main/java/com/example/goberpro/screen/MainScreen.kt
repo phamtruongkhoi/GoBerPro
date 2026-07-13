@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,18 +16,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import kotlinx.serialization.SerialName
 
-
-// Các import hỗ trợ Supabase và trạng thái Loading
-import androidx.compose.material3.CircularProgressIndicator
+// Hỗ trợ Supabase
 import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import com.example.goberpro.supabase // Lưu ý: Đổi tên package nếu file SupabaseClient của cậu nằm ở thư mục khác
+import com.example.goberpro.supabase
+
+// Import Model và ViewModel (Theo kiến trúc của bạn cậu)
+import com.example.goberpro.model.BarberService
+import com.example.goberpro.model.Booking
+import com.example.goberpro.viewmodel.BarberViewModel
 
 // -- BẢNG MÀU --
 val BackgroundColor = Color(0xFF121212)
@@ -37,42 +40,96 @@ val TextSecondary = Color(0xFFA0A0A0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarberMainScreen() {
-    var selectedItem by remember { mutableStateOf(0) }
+fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
+    var selectedItem by remember { mutableIntStateOf(0) }
+    var showInvoice by remember { mutableStateOf(false) }
+    var showConfirmScreen by remember { mutableStateOf(false) }
+
+    // Lưu tạm thông tin khách hàng để truyền giữa các màn hình
+    var tempCustomerName by remember { mutableStateOf("") }
+    var tempPhoneNumber by remember { mutableStateOf("") }
+    var tempDate by remember { mutableStateOf("") }
+    var tempTime by remember { mutableStateOf("") }
+
     val items = listOf("Trang Chủ", "Đặt Lịch", "Lịch Sử", "Thông Báo", "Cá Nhân")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.DateRange, Icons.Filled.List, Icons.Filled.Notifications, Icons.Filled.Person)
+    val icons = listOf(Icons.Filled.Home, Icons.Filled.DateRange, Icons.AutoMirrored.Filled.List, Icons.Filled.Notifications, Icons.Filled.Person)
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = BackgroundColor,
-                contentColor = TextPrimary
-            ) {
-                items.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        icon = { Icon(icons[index], contentDescription = item) },
-                        label = { Text(item, fontSize = 10.sp) },
-                        selected = selectedItem == index,
-                        onClick = { selectedItem = index },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = AccentGold,
-                            selectedTextColor = AccentGold,
-                            indicatorColor = Color.Transparent, // Tắt màu nền tròn khi chọn
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary
+            // Ẩn thanh điều hướng khi đang ở màn hình xác nhận hoặc hóa đơn
+            if (!showConfirmScreen && !showInvoice) {
+                NavigationBar(
+                    containerColor = BackgroundColor,
+                    contentColor = TextPrimary
+                ) {
+                    items.forEachIndexed { index, item ->
+                        NavigationBarItem(
+                            icon = { Icon(icons[index], contentDescription = item) },
+                            label = { Text(item, fontSize = 10.sp) },
+                            selected = selectedItem == index,
+                            onClick = {
+                                selectedItem = index
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AccentGold,
+                                selectedTextColor = AccentGold,
+                                indicatorColor = Color.Transparent,
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary
+                            )
                         )
-                    )
+                    }
                 }
             }
         },
         containerColor = BackgroundColor
     ) { paddingValues ->
-        // BẮT ĐẦU PHẦN XỬ LÝ CHUYỂN TAB Ở ĐÂY
-        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+        Box(modifier = Modifier.padding(if (showConfirmScreen || showInvoice) PaddingValues(0.dp) else paddingValues).fillMaxSize()) {
             when (selectedItem) {
-                0 -> HomeContent() // Ruột trang chủ đã được cập nhật Supabase
-                1 -> PlaceholderScreen("Màn Hình Đặt Lịch")
-                2 -> PlaceholderScreen("Màn Hình Lịch Sử")
+                0 -> HomeContent() // Giao diện trang chủ đã gộp code ảnh của cậu
+                1 -> {
+                    // Luồng xử lý đặt lịch của bạn cậu
+                    if (showInvoice) {
+                        InvoiceScreen(
+                            viewModel = viewModel,
+                            onNavigateToHome = {
+                                showInvoice = false
+                                showConfirmScreen = false
+                                selectedItem = 0
+                            }
+                        )
+                    } else if (showConfirmScreen) {
+                        ConfirmBookingScreen(
+                            viewModel = viewModel,
+                            customerName = tempCustomerName,
+                            phoneNumber = tempPhoneNumber,
+                            selectedDate = tempDate,
+                            selectedTime = tempTime,
+                            onBack = { showConfirmScreen = false }
+                        )
+
+                        // Lắng nghe khi đặt lịch thành công để hiện hóa đơn
+                        val bookingSuccess by viewModel.bookingSuccess.collectAsState()
+                        LaunchedEffect(bookingSuccess) {
+                            if (bookingSuccess) {
+                                showInvoice = true
+                                showConfirmScreen = false
+                            }
+                        }
+                    } else {
+                        BookingScreen(
+                            viewModel = viewModel,
+                            onBookingConfirmed = { name, phone, date, time ->
+                                tempCustomerName = name
+                                tempPhoneNumber = phone
+                                tempDate = date
+                                tempTime = time
+                                showConfirmScreen = true
+                            }
+                        )
+                    }
+                }
+                2 -> HistoryScreen(viewModel = viewModel)
                 3 -> PlaceholderScreen("Màn Hình Thông Báo")
                 4 -> PlaceholderScreen("Màn Hình Cá Nhân")
             }
@@ -80,7 +137,7 @@ fun BarberMainScreen() {
     }
 }
 
-// Hàm tạm thời để hiển thị chữ cho các tab chưa có giao diện
+// Hàm hiển thị tạm cho các tab chưa có giao diện
 @Composable
 fun PlaceholderScreen(title: String) {
     Box(
@@ -91,29 +148,16 @@ fun PlaceholderScreen(title: String) {
     }
 }
 
-// 1. Khai báo khuôn mẫu dữ liệu khớp với bảng trên Supabase
-@Serializable
-data class BarberService(
-    val id: Long,
-    val name: String,
-    val price: Long,
-    val description: String? = null,
-    @SerialName("image_url") val imageUrl: String? = null // Cột chứa link ảnh từ Supabase
-)
-
 // Toàn bộ giao diện trang chủ đã được cấu hình tự động gọi API của Supabase
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeContent() {
-    // 2. Tạo trạng thái lưu danh sách dịch vụ và trạng thái loading
     var serviceList by remember { mutableStateOf<List<BarberService>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // 3. LaunchedEffect dùng để tự động fetch dữ liệu từ Supabase khi mở màn hình
     LaunchedEffect(Unit) {
         try {
-            // Gọi xuống Supabase lấy toàn bộ bảng "services" và ép kiểu sang List<BarberService>
             val data = supabase.postgrest["services"].select().decodeList<BarberService>()
             serviceList = data
             isLoading = false
@@ -130,7 +174,7 @@ fun HomeContent() {
     ) {
         item { Spacer(modifier = Modifier.height(16.dp)) }
 
-        // [GIỮ NGUYÊN] 1. Thanh tìm kiếm
+        // 1. Thanh tìm kiếm
         item {
             OutlinedTextField(
                 value = "",
@@ -149,7 +193,7 @@ fun HomeContent() {
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // [GIỮ NGUYÊN] 2. ComBo Ưu Đãi
+        // 2. ComBo Ưu Đãi
         item {
             Text("ComBo Ưu Đãi", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
@@ -168,7 +212,7 @@ fun HomeContent() {
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // [GIỮ NGUYÊN] 3. Gober (Thợ cắt tóc)
+        // 3. Gober (Thợ cắt tóc)
         item {
             Text("Gober", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
@@ -187,18 +231,17 @@ fun HomeContent() {
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // 4. Dịch Vụ Nổi Bật - NƠI ĐỔ DỮ LIỆU THẬT SUPABASE
+        // 4. Dịch Vụ Nổi Bật - Đổ dữ liệu thật kèm ảnh
         item {
             Text("Dịch Vụ Nổi Bật", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // Kiểm tra các trạng thái khi tải dữ liệu
         when {
             isLoading -> {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = AccentGold) // Vòng xoay tải dữ liệu màu Gold sang trọng
+                        CircularProgressIndicator(color = AccentGold)
                     }
                 }
             }
@@ -213,7 +256,6 @@ fun HomeContent() {
                 }
             }
             else -> {
-                // ĐÃ CÓ DỮ LIỆU THẬT: Duyệt qua danh sách lấy từ Supabase
                 items(serviceList.size) { index ->
                     val service = serviceList[index]
                     Row(
@@ -224,24 +266,24 @@ fun HomeContent() {
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // HIỂN THỊ ẢNH THẬT BẰNG ASYNCIMAGE
+
+                        // HIỂN THỊ ẢNH THẬT BẰNG ASYNCIMAGE (Code của cậu)
                         AsyncImage(
-                            model = service.imageUrl, // Link ảnh lấy từ Supabase
+                            model = service.imageUrl,
                             contentDescription = service.name,
                             modifier = Modifier
                                 .size(80.dp)
-                                .clip(RoundedCornerShape(8.dp)), // Bo góc ảnh cho đẹp
-                            contentScale = ContentScale.Crop // Cắt ảnh vừa vặn với khung vuông
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
                         )
 
                         Spacer(modifier = Modifier.width(16.dp))
 
-                        // Cột thông tin chữ giữ nguyên
                         Column {
                             Text(text = service.name, color = TextPrimary, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
-                            // Định dạng hiển thị tiền tệ cơ bản
-                            Text(text = "${String.format("%,d", service.price)} Đ", color = AccentGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            // Fix luôn cảnh báo Locale ở đây
+                            Text(text = "${String.format(java.util.Locale.US, "%,d", service.price)} Đ", color = AccentGold, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 }
