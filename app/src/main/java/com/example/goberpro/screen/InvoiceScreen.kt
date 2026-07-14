@@ -47,7 +47,8 @@ fun InvoiceScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Spacer(Modifier.height(20.dp))
                 Icon(Icons.Default.CheckCircle, "Success", tint = Color(0xFF009688), modifier = Modifier.size(72.dp))
-                Text("ĐẶT LỊCH THÀNH CÔNG!", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                val isPaid = activeBooking?.status == "Paid"
+                Text(if (isPaid) "THANH TOÁN THÀNH CÔNG!" else "ĐẶT LỊCH THÀNH CÔNG!", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
                 Card(
                     modifier = Modifier.fillMaxWidth().border(1.dp, Color.DarkGray, RoundedCornerShape(12.dp)),
@@ -75,10 +76,10 @@ fun InvoiceScreen(
                             Text("Trạng thái:", color = Color.Gray)
                             Box(
                                 Modifier
-                                    .background(Color(0xFF009688).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                    .background(if (isPaid) Color(0xFF4CAF50).copy(alpha = 0.2f) else Color(0xFF009688).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                                     .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
-                                Text("CHƯA THANH TOÁN", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF009688))
+                                Text(if (isPaid) "ĐÃ THANH TOÁN (PAID)" else "CHƯA THANH TOÁN (PENDING)", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = if (isPaid) Color(0xFF4CAF50) else Color(0xFF009688))
                             }
                         }
                         HorizontalDivider(color = Color.DarkGray)
@@ -96,6 +97,21 @@ fun InvoiceScreen(
             }
 
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (activeBooking?.status == "Pending") {
+                    Button(
+                        onClick = { 
+                            activeBooking?.id?.let { id ->
+                                viewModel.markBookingAsSuccess(id)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50), contentColor = Color.White),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("XÁC NHẬN THANH TOÁN TẠI QUẦY", fontWeight = FontWeight.Bold)
+                    }
+                }
+
                 Button(
                     onClick = { activeBooking?.let { PdfGenerator.generateInvoicePdf(context, it, selectedServices) } },
                     modifier = Modifier.fillMaxWidth().height(54.dp),

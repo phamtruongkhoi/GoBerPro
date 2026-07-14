@@ -21,7 +21,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(viewModel: BarberViewModel) {
+fun HistoryScreen(viewModel: BarberViewModel, onEditBooking: () -> Unit) {
     val bookingHistory by viewModel.bookingHistory.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -60,7 +60,10 @@ fun HistoryScreen(viewModel: BarberViewModel) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(bookingHistory) { booking ->
-                        HistoryItem(booking)
+                        HistoryItem(booking, onEdit = {
+                            viewModel.loadBookingForUpdate(booking)
+                            onEditBooking()
+                        })
                     }
                 }
             }
@@ -69,7 +72,7 @@ fun HistoryScreen(viewModel: BarberViewModel) {
 }
 
 @Composable
-fun HistoryItem(booking: Booking) {
+fun HistoryItem(booking: Booking, onEdit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = SurfaceColor),
@@ -136,13 +139,27 @@ fun HistoryItem(booking: Booking) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Tổng thanh toán", color = TextPrimary, fontWeight = FontWeight.Medium)
-                Text(
-                    text = "${String.format(Locale.getDefault(), "%,d", booking.total_price)} Đ",
-                    color = AccentGold,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Column {
+                    Text(text = "Tổng thanh toán", color = TextSecondary, fontSize = 12.sp)
+                    Text(
+                        text = "${String.format(Locale.getDefault(), "%,d", booking.total_price)} Đ",
+                        color = AccentGold,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+                
+                if (booking.status == "Pending") {
+                    Button(
+                        onClick = onEdit,
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentGold, contentColor = Color.Black),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("SỬA ĐƠN", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }

@@ -41,10 +41,20 @@ fun BookingScreen(
     val selectedServices by viewModel.selectedServices.collectAsState()
     val totalPrice by viewModel.totalPrice.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    var customerName by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
+    
+    // Sử dụng state từ ViewModel để hỗ trợ pre-fill tự động khi Sửa đơn
+    val customerName by viewModel.customerName.collectAsState()
+    val phoneNumber by viewModel.phoneNumber.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val selectedTime by viewModel.selectedTime.collectAsState()
+    
     val calendar = Calendar.getInstance()
-    var selectedDate by remember { mutableStateOf(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)) }
+    // Khởi tạo ngày mặc định nếu chưa có
+    LaunchedEffect(Unit) {
+        if (selectedDate.isEmpty()) {
+            viewModel.selectedDate.value = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+        }
+    }
     
     val timeSlots = listOf(
         "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
@@ -52,7 +62,6 @@ fun BookingScreen(
         "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
         "18:00", "18:30", "19:00", "19:30", "20:00"
     )
-    var selectedTime by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
@@ -81,7 +90,7 @@ fun BookingScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
                         val date = Calendar.getInstance().apply { timeInMillis = it }
-                        selectedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.time)
+                        viewModel.selectedDate.value = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.time)
                     }
                     showDatePicker = false
                 }) { Text("Chọn") }
@@ -112,7 +121,7 @@ fun BookingScreen(
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = customerName,
-                onValueChange = { customerName = it },
+                onValueChange = { viewModel.customerName.value = it },
                 label = { Text("Tên của bạn", color = TextSecondary) },
                 leadingIcon = { Icon(Icons.Default.Person, null, tint = AccentGold) },
                 modifier = Modifier.fillMaxWidth(),
@@ -127,7 +136,7 @@ fun BookingScreen(
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it },
+                onValueChange = { viewModel.phoneNumber.value = it },
                 label = { Text("Số điện thoại", color = TextSecondary) },
                 leadingIcon = { Icon(Icons.Default.Phone, null, tint = AccentGold) },
                 modifier = Modifier.fillMaxWidth(),
@@ -168,7 +177,7 @@ fun BookingScreen(
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { selectedTime = time },
+                                .clickable { viewModel.selectedTime.value = time },
                             shape = RoundedCornerShape(8.dp),
                             color = if (isTimeSelected) AccentGold else SurfaceColor,
                             border = BorderStroke(1.dp, if (isTimeSelected) AccentGold else Color.DarkGray)

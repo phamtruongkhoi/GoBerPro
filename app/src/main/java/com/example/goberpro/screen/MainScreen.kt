@@ -42,12 +42,6 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
     var showInvoice by remember { mutableStateOf(false) }
     var showConfirmScreen by remember { mutableStateOf(false) }
     
-    // Lưu tạm thông tin khách hàng để truyền giữa các màn hình
-    var tempCustomerName by remember { mutableStateOf("") }
-    var tempPhoneNumber by remember { mutableStateOf("") }
-    var tempDate by remember { mutableStateOf("") }
-    var tempTime by remember { mutableStateOf("") }
-
     val items = listOf("Trang Chủ", "Đặt Lịch", "Lịch Sử", "Thông Báo", "Cá Nhân")
     val icons = listOf(Icons.Filled.Home, Icons.Filled.DateRange, Icons.AutoMirrored.Filled.List, Icons.Filled.Notifications, Icons.Filled.Person)
 
@@ -96,10 +90,6 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
                     } else if (showConfirmScreen) {
                         ConfirmBookingScreen(
                             viewModel = viewModel,
-                            customerName = tempCustomerName,
-                            phoneNumber = tempPhoneNumber,
-                            selectedDate = tempDate,
-                            selectedTime = tempTime,
                             onBack = { showConfirmScreen = false }
                         )
                         
@@ -114,17 +104,20 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
                     } else {
                         BookingScreen(
                             viewModel = viewModel,
-                            onBookingConfirmed = { name, phone, date, time -> 
-                                tempCustomerName = name
-                                tempPhoneNumber = phone
-                                tempDate = date
-                                tempTime = time
+                            onBookingConfirmed = { _, _, _, _ -> 
                                 showConfirmScreen = true 
                             }
                         )
                     }
                 }
-                2 -> HistoryScreen(viewModel = viewModel)
+                2 -> HistoryScreen(
+                    viewModel = viewModel,
+                    onEditBooking = {
+                        selectedItem = 1
+                        showInvoice = false
+                        showConfirmScreen = false
+                    }
+                )
                 3 -> PlaceholderScreen("Màn Hình Thông Báo")
                 4 -> PlaceholderScreen("Màn Hình Cá Nhân")
             }
