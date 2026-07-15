@@ -25,12 +25,13 @@ import java.util.Locale
 @Composable
 fun ConfirmBookingScreen(
     viewModel: BarberViewModel,
-    customerName: String,
-    phoneNumber: String,
-    selectedDate: String,
-    selectedTime: String,
     onBack: () -> Unit
 ) {
+    val customerName by viewModel.customerName.collectAsState()
+    val phoneNumber by viewModel.phoneNumber.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val selectedTime by viewModel.selectedTime.collectAsState()
+
     val selectedServices by viewModel.selectedServices.collectAsState()
     val totalPrice by viewModel.totalPrice.collectAsState()
     val discountAmount by viewModel.discountAmount.collectAsState()
@@ -242,7 +243,12 @@ fun ConfirmBookingScreen(
                     // Nút xác nhận
                     Button(
                         onClick = {
-                            viewModel.confirmBooking(customerName, phoneNumber, selectedDate, selectedTime)
+                            val isUpdate = viewModel.isUpdateMode.value
+                            if (isUpdate) {
+                                viewModel.updateExistingBooking()
+                            } else {
+                                viewModel.confirmBooking(customerName, phoneNumber, selectedDate, selectedTime)
+                            }
                         },
                         modifier = Modifier.fillMaxWidth().height(54.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AccentGold, contentColor = Color.Black),
@@ -252,7 +258,7 @@ fun ConfirmBookingScreen(
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
                         } else {
-                            Text("ĐẶT LỊCH NGAY", fontWeight = FontWeight.Bold)
+                            Text(if (viewModel.isUpdateMode.collectAsState().value) "CẬP NHẬT ĐƠN HÀNG" else "ĐẶT LỊCH NGAY", fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(8.dp))
                             Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
                         }
