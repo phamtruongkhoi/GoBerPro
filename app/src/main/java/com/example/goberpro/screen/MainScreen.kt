@@ -31,13 +31,16 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
     var showInvoice by remember { mutableStateOf(false) }
     var showConfirmScreen by remember { mutableStateOf(false) }
 
+    // Đổi biến showAdminAddScreen cũ thành biến trạng thái chọn màn hình Admin
+    var adminScreenState by remember { mutableStateOf("NONE") } // "NONE", "ADD", "MANAGE"
+
     val items = listOf("Trang Chủ", "Đặt Lịch", "Lịch Sử", "Thông Báo", "Cá Nhân")
     val icons = listOf(Icons.Filled.Home, Icons.Filled.DateRange, Icons.AutoMirrored.Filled.List, Icons.Filled.Notifications, Icons.Filled.Person)
 
     Scaffold(
         bottomBar = {
-            // Ẩn thanh điều hướng khi đang ở màn hình xác nhận hoặc hóa đơn
-            if (!showConfirmScreen && !showInvoice) {
+            // Ẩn thanh điều hướng khi đang ở màn hình xác nhận, hóa đơn, hoặc bất kỳ màn hình Admin nào
+            if (!showConfirmScreen && !showInvoice && adminScreenState == "NONE") {
                 NavigationBar(
                     containerColor = BackgroundColor,
                     contentColor = TextPrimary
@@ -64,7 +67,8 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
         },
         containerColor = BackgroundColor
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(if (showConfirmScreen || showInvoice) PaddingValues(0.dp) else paddingValues).fillMaxSize()) {
+        // Cập nhật padding để các màn hình Admin cũng được full màn hình
+        Box(modifier = Modifier.padding(if (showConfirmScreen || showInvoice || adminScreenState != "NONE") PaddingValues(0.dp) else paddingValues).fillMaxSize()) {
             when (selectedItem) {
                 0 -> HomeScreen() // Gọi màn hình mới ở đây!
                 1 -> {
@@ -112,7 +116,19 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
                 )
                 // THAY THẾ 2 DÒNG PLACEHOLDER CŨ BẰNG 2 DÒNG NÀY:
                 3 -> NotificationScreen()
-                4 -> ProfileScreen()
+
+                // Cập nhật lại logic chuyển đổi ở Tab Cá nhân (số 4)
+                4 -> {
+                    // Điều hướng các màn hình chức năng Cá Nhân / Admin
+                    when (adminScreenState) {
+                        "ADD" -> AdminAddScreen(onBack = { adminScreenState = "NONE" })
+                        "MANAGE" -> AdminManageScreen(onBack = { adminScreenState = "NONE" })
+                        else -> ProfileScreen(
+                            onNavigateToAdd = { adminScreenState = "ADD" },
+                            onNavigateToManage = { adminScreenState = "MANAGE" }
+                        )
+                    }
+                }
             }
         }
     }

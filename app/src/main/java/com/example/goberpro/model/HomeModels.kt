@@ -24,3 +24,16 @@ data class AppBarber(
     val name: String,
     @SerialName("image_url") val imageUrl: String? = null
 )
+@Serializable
+data class InsertService(
+    val name: String,
+    val price: Long,
+    @SerialName("image_url") val imageUrl: String
+)
+
+@Serializable
+data class InsertProduct(
+    val name: String,
+    val price: Long,
+    @SerialName("image_url") val imageUrl: String
+)

@@ -3,6 +3,7 @@ package com.example.goberpro.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape // Import thêm để bo góc nút bấm
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -16,7 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onNavigateToAdd: () -> Unit = {},
+    onNavigateToManage: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,6 +57,30 @@ fun ProfileScreen() {
         ProfileMenuItem("Chi Tiết Thông Tin")
         ProfileMenuItem("Hạng Thành Viên", "Thành viên Vàng")
         ProfileMenuItem("Ví GoBer", "0 Đ")
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Nút Thêm Mới (Cũ)
+        Button(
+            onClick = onNavigateToAdd,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text("➕ Thêm Mới Dịch Vụ / Phụ Liệu", color = AccentGold, fontSize = 16.sp)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Nút Quản Lý Sửa/Xóa (Mới)
+        Button(
+            onClick = onNavigateToManage,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text("⚙️ Quản Lý CSDL (Sửa / Xóa)", color = AccentGold, fontSize = 16.sp)
+        }
 
         Spacer(modifier = Modifier.weight(1f)) // Đẩy phần liên hệ xuống dưới cùng
 
