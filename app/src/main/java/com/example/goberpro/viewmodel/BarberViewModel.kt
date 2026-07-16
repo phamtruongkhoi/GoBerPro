@@ -27,7 +27,7 @@ class BarberViewModel : ViewModel() {
 
     private val _totalPrice = MutableStateFlow(0L)
     val totalPrice: StateFlow<Long> = _totalPrice.asStateFlow()
-    
+
     private val _appliedDiscount = MutableStateFlow<Discount?>(null)
     val appliedDiscount: StateFlow<Discount?> = _appliedDiscount.asStateFlow()
 
@@ -49,15 +49,34 @@ class BarberViewModel : ViewModel() {
     private val _activeBooking = MutableStateFlow<Booking?>(null)
     val activeBooking: StateFlow<Booking?> = _activeBooking.asStateFlow()
 
+
+    //================= THỐNG KÊ =================
+
+    private val _totalRevenue = MutableStateFlow(0L)
+    val totalRevenue: StateFlow<Long> = _totalRevenue.asStateFlow()
+
+    private val _todayRevenue = MutableStateFlow(0L)
+    val todayRevenue: StateFlow<Long> = _todayRevenue.asStateFlow()
+
+    private val _monthRevenue = MutableStateFlow(0L)
+    val monthRevenue: StateFlow<Long> = _monthRevenue.asStateFlow()
+
+    private val _yearRevenue = MutableStateFlow(0L)
+    val yearRevenue: StateFlow<Long> = _yearRevenue.asStateFlow()
+
+    private val _totalOrders = MutableStateFlow(0)
+    val totalOrders: StateFlow<Int> = _totalOrders.asStateFlow()
+
     private val _isUpdateMode = MutableStateFlow(false)
     val isUpdateMode: StateFlow<Boolean> = _isUpdateMode.asStateFlow()
+
 
     // Trạng thái cho BookingScreen để dễ dàng pre-fill
     val customerName = MutableStateFlow("")
     val phoneNumber = MutableStateFlow("")
     val selectedDate = MutableStateFlow("")
     val selectedTime = MutableStateFlow("")
-    
+
     // Lưu danh sách ID dịch vụ gốc để thực hiện logic GỘP (không ghi đè)
     private var originalServiceIds = listOf<Long>()
 
@@ -118,7 +137,7 @@ class BarberViewModel : ViewModel() {
                 val discount = supabase.postgrest["discounts"]
                     .select { filter { Discount::code eq code } }
                     .decodeSingleOrNull<Discount>()
-                
+
                 if (discount != null && discount.is_active) {
                     _appliedDiscount.value = discount
                     updateFinalPrice()
@@ -173,27 +192,27 @@ class BarberViewModel : ViewModel() {
                 val items = supabase.postgrest["booking_items"]
                     .select { filter { BookingItem::booking_id eq (booking.id ?: 0) } }
                     .decodeList<BookingItem>()
-                
+
                 // 2. Chuyển ID thành danh sách BarberService object
                 val currentServices = _availableServices.value.filter { service ->
                     items.any { it.service_id == service.id }
                 }
-                
+
                 // Lưu lại danh sách ID gốc để phục vụ logic gộp sau này
                 originalServiceIds = items.map { it.service_id }
-                
+
                 // 3. Đưa vào trạng thái chỉnh sửa và pre-fill thông tin khách
                 _selectedServices.value = currentServices
                 _activeBooking.value = booking
                 _isUpdateMode.value = true
-                
+
                 customerName.value = booking.customer_name
                 phoneNumber.value = booking.phone ?: ""
                 selectedDate.value = booking.booking_date
                 selectedTime.value = booking.booking_time
 
                 calculateTotal()
-                
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 _errorMessage.value = "Lỗi khi nạp thông tin đơn hàng"
@@ -218,8 +237,9 @@ class BarberViewModel : ViewModel() {
 
                 // 2. Xử lý GỘP dịch vụ (Append/addAll): Chỉ chèn thêm những món mới chọn
                 // Tuyệt đối không xóa/ghi đè các món cũ trong DB
-                val newSelectedServices = _selectedServices.value.filter { it.id !in originalServiceIds }
-                
+                val newSelectedServices =
+                    _selectedServices.value.filter { it.id !in originalServiceIds }
+
                 if (newSelectedServices.isNotEmpty()) {
                     val newItems = newSelectedServices.map { service ->
                         BookingItem(
@@ -236,7 +256,7 @@ class BarberViewModel : ViewModel() {
                 // để InvoiceScreen và PdfGenerator in ra đầy đủ các dòng
                 _activeBooking.value = currentBooking.copy(total_price = _finalPrice.value)
                 _bookingSuccess.value = true
-                
+
                 // Cập nhật lại danh sách lịch sử để HistoryScreen đồng bộ
                 fetchBookingHistory()
             } catch (e: Exception) {
@@ -259,7 +279,7 @@ class BarberViewModel : ViewModel() {
                         set("status", "Success")
                     }
                 ) { filter { Booking::id eq bookingId } }
-                
+
                 // 2. Cập nhật lại đối tượng đang hoạt động nếu khớp ID
                 if (_activeBooking.value?.id == bookingId) {
                     _activeBooking.value = _activeBooking.value?.copy(status = "Success")
@@ -267,7 +287,7 @@ class BarberViewModel : ViewModel() {
 
                 // 3. Tải lại danh sách lịch sử để UI đồng bộ ngay lập tức
                 fetchBookingHistory()
-                
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 _errorMessage.value = "Lỗi khi cập nhật trạng thái đơn hàng"
@@ -288,7 +308,7 @@ class BarberViewModel : ViewModel() {
                         set("status", "Paid")
                     }
                 ) { filter { Booking::id eq currentBooking.id } }
-                
+
                 // Cập nhật lại đối tượng local để UI hiển thị đúng
                 _activeBooking.value = currentBooking.copy(status = "Paid")
             } catch (e: Exception) {
@@ -298,7 +318,7 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
-    
+
     fun confirmBooking(customerName: String, phone: String, date: String, time: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -312,12 +332,12 @@ class BarberViewModel : ViewModel() {
                     total_price = _finalPrice.value,
                     status = "Pending"
                 )
-                
+
                 // We need the ID of the inserted booking
                 val response = supabase.postgrest["bookings"].insert(newBooking) {
                     select()
                 }.decodeSingle<Booking>()
-                
+
                 val bookingId = response.id ?: return@launch
                 _activeBooking.value = response
 
@@ -330,9 +350,9 @@ class BarberViewModel : ViewModel() {
                         quantity = 1
                     )
                 }
-                
+
                 supabase.postgrest["booking_items"].insert(items)
-                
+
                 _bookingSuccess.value = true
                 _errorMessage.value = null
                 // Note: Don't reset selection here so InvoiceScreen can show details
@@ -345,4 +365,82 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
+
+
+    fun loadStatistics() {
+
+        viewModelScope.launch {
+
+            _isLoading.value = true
+
+            try {
+
+                val bookings = supabase.postgrest["bookings"]
+                    .select()
+                    .decodeList<Booking>()
+
+                // Chỉ tính đơn đã hoàn thành
+                val completedBookings = bookings.filter {
+                    it.status == "Paid" || it.status == "Success"
+                }
+
+                _totalOrders.value = completedBookings.size
+
+                _totalRevenue.value =
+                    completedBookings.sumOf {
+                        it.total_price
+                    }
+
+                val today = java.text.SimpleDateFormat(
+                    "yyyy-MM-dd",
+                    java.util.Locale.getDefault()
+                ).format(java.util.Date())
+
+                _todayRevenue.value =
+                    completedBookings
+                        .filter {
+                            it.booking_date == today
+                        }
+                        .sumOf {
+                            it.total_price
+                        }
+
+                val currentMonth = today.substring(0, 7)
+
+                _monthRevenue.value =
+                    completedBookings
+                        .filter {
+                            it.booking_date.startsWith(currentMonth)
+                        }
+                        .sumOf {
+                            it.total_price
+                        }
+
+                val currentYear = today.substring(0, 4)
+
+                _yearRevenue.value =
+                    completedBookings
+                        .filter {
+                            it.booking_date.startsWith(currentYear)
+                        }
+                        .sumOf {
+                            it.total_price
+                        }
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+
+            } finally {
+                
+                
+
+                _isLoading.value = false
+
+            }
+        }
+    }
 }
+
+
+

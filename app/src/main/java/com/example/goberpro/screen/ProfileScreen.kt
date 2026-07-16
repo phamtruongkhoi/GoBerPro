@@ -16,7 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onStatisticsClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,6 +55,17 @@ fun ProfileScreen() {
         ProfileMenuItem("Chi Tiết Thông Tin")
         ProfileMenuItem("Hạng Thành Viên", "Thành viên Vàng")
         ProfileMenuItem("Ví GoBer", "0 Đ")
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                onStatisticsClick()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Thống kê doanh thu")
+        }
 
         Spacer(modifier = Modifier.weight(1f)) // Đẩy phần liên hệ xuống dưới cùng
 

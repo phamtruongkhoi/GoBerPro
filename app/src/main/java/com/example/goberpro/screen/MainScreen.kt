@@ -26,18 +26,33 @@ val TextSecondary = Color(0xFFA0A0A0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
-    var selectedItem by remember { mutableIntStateOf(0) }
+fun BarberMainScreen(
+    viewModel: BarberViewModel = viewModel()
+) {
+
+   var selectedItem by remember { mutableIntStateOf(0) }
     var showInvoice by remember { mutableStateOf(false) }
     var showConfirmScreen by remember { mutableStateOf(false) }
-
-    val items = listOf("Trang Chủ", "Đặt Lịch", "Lịch Sử", "Thông Báo", "Cá Nhân")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.DateRange, Icons.AutoMirrored.Filled.List, Icons.Filled.Notifications, Icons.Filled.Person)
+    var showStatistics by remember { mutableStateOf(false) }
+    val items = listOf(
+        "Trang Chủ",
+        "Đặt Lịch",
+        "Lịch Sử",
+        "Thông Báo",
+        "Cá Nhân"
+    )
+    val icons = listOf(
+        Icons.Filled.Home,
+        Icons.Filled.DateRange,
+        Icons.AutoMirrored.Filled.List,
+        Icons.Filled.Notifications,
+        Icons.Filled.Person
+    )
 
     Scaffold(
         bottomBar = {
             // Ẩn thanh điều hướng khi đang ở màn hình xác nhận hoặc hóa đơn
-            if (!showConfirmScreen && !showInvoice) {
+            if (!showConfirmScreen && !showInvoice && !showStatistics) {
                 NavigationBar(
                     containerColor = BackgroundColor,
                     contentColor = TextPrimary
@@ -64,7 +79,14 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
         },
         containerColor = BackgroundColor
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(if (showConfirmScreen || showInvoice) PaddingValues(0.dp) else paddingValues).fillMaxSize()) {
+        Box(
+            modifier = Modifier.padding(
+                if (showConfirmScreen || showInvoice || showStatistics)
+                    PaddingValues(0.dp)
+                else
+                    paddingValues
+            ).fillMaxSize()
+        ) {
             when (selectedItem) {
                 0 -> HomeScreen() // Gọi màn hình mới ở đây!
                 1 -> {
@@ -101,6 +123,7 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
                         )
                     }
                 }
+
                 2 -> HistoryScreen(
                     // Đã fix lỗi: Thêm onEditBooking để HistoryScreen quay lại được màn đặt lịch
                     viewModel = viewModel,
@@ -111,20 +134,42 @@ fun BarberMainScreen(viewModel: BarberViewModel = viewModel()) {
                     }
                 )
                 // THAY THẾ 2 DÒNG PLACEHOLDER CŨ BẰNG 2 DÒNG NÀY:
+
+
                 3 -> NotificationScreen()
-                4 -> ProfileScreen()
+                4 -> {
+                    if (showStatistics) {
+                        StatisticsScreen(
+                            viewModel = viewModel,
+                            onBack = {
+                                showStatistics = false
+                            }
+                        )
+                    } else {
+                        ProfileScreen(
+                            onStatisticsClick = {
+                                showStatistics = true
+                            }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// Hàm hiển thị tạm cho các tab chưa có giao diện
 @Composable
 fun PlaceholderScreen(title: String) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = title, color = AccentGold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = title,
+            color = AccentGold,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
+
