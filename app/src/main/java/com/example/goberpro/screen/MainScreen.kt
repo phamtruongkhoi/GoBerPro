@@ -29,11 +29,14 @@ val TextSecondary = Color(0xFFA0A0A0)
 fun BarberMainScreen(
     viewModel: BarberViewModel = viewModel()
 ) {
-
-   var selectedItem by remember { mutableIntStateOf(0) }
+    var selectedItem by remember { mutableIntStateOf(0) }
     var showInvoice by remember { mutableStateOf(false) }
     var showConfirmScreen by remember { mutableStateOf(false) }
     var showStatistics by remember { mutableStateOf(false) }
+
+    // Biến trạng thái chọn màn hình Admin
+    var adminScreenState by remember { mutableStateOf("NONE") } // "NONE", "ADD", "MANAGE"
+
     val items = listOf(
         "Trang Chủ",
         "Đặt Lịch",
@@ -51,8 +54,8 @@ fun BarberMainScreen(
 
     Scaffold(
         bottomBar = {
-            // Ẩn thanh điều hướng khi đang ở màn hình xác nhận hoặc hóa đơn
-            if (!showConfirmScreen && !showInvoice && !showStatistics) {
+            // Ẩn thanh điều hướng khi đang ở màn hình xác nhận, hóa đơn, thống kê hoặc admin
+            if (!showConfirmScreen && !showInvoice && !showStatistics && adminScreenState == "NONE") {
                 NavigationBar(
                     containerColor = BackgroundColor,
                     contentColor = TextPrimary
@@ -81,7 +84,8 @@ fun BarberMainScreen(
     ) { paddingValues ->
         Box(
             modifier = Modifier.padding(
-                if (showConfirmScreen || showInvoice || showStatistics)
+                // Trả về padding 0 nếu đang ở các màn hình phụ để hiển thị full viền
+                if (showConfirmScreen || showInvoice || showStatistics || adminScreenState != "NONE")
                     PaddingValues(0.dp)
                 else
                     paddingValues
@@ -133,11 +137,11 @@ fun BarberMainScreen(
                         showConfirmScreen = false
                     }
                 )
-                // THAY THẾ 2 DÒNG PLACEHOLDER CŨ BẰNG 2 DÒNG NÀY:
-
 
                 3 -> NotificationScreen()
+
                 4 -> {
+                    // Ưu tiên hiển thị màn hình Thống kê trước nếu showStatistics = true
                     if (showStatistics) {
                         StatisticsScreen(
                             viewModel = viewModel,
@@ -146,11 +150,16 @@ fun BarberMainScreen(
                             }
                         )
                     } else {
-                        ProfileScreen(
-                            onStatisticsClick = {
-                                showStatistics = true
-                            }
-                        )
+                        // Nếu không, điều hướng các màn hình chức năng Cá Nhân / Admin
+                        when (adminScreenState) {
+                            "ADD" -> AdminAddScreen(onBack = { adminScreenState = "NONE" })
+                            "MANAGE" -> AdminManageScreen(onBack = { adminScreenState = "NONE" })
+                            else -> ProfileScreen(
+                                onStatisticsClick = { showStatistics = true },
+                                onNavigateToAdd = { adminScreenState = "ADD" },
+                                onNavigateToManage = { adminScreenState = "MANAGE" }
+                            )
+                        }
                     }
                 }
             }
@@ -172,4 +181,3 @@ fun PlaceholderScreen(title: String) {
         )
     }
 }
-
