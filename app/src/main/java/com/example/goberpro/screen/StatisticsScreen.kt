@@ -20,6 +20,9 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
+
+
+
 fun StatisticsScreen(
     viewModel: BarberViewModel = viewModel(),
     onBack: (() -> Unit)? = null
@@ -95,6 +98,9 @@ fun StatisticsScreen(
             title = "Doanh thu năm",
             value = formatMoney(yearRevenue)
         )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        RevenueChart()
     }
 
 }
